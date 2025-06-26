@@ -1,0 +1,10 @@
+# Ignore all
+/*
+
+# Exceptions
+!.github/
+!.gitignore
+!.gitmodules
+!LICENSE
+!README.md
+!XAPacker.cxx

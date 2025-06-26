@@ -1,0 +1,3 @@
+[submodule "xa-interleaver"]
+	path = xa-interleaver
+	url = https://github.com/N4gtan/xa-interleaver
