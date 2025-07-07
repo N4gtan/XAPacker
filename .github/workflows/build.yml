@@ -17,6 +17,7 @@ jobs:
 
     - name: Build and package XAPacker
       run: |
+        (Get-Content XAPacker.cxx -Raw) -replace 'VERSION', "${{ github.ref_name }}" | Set-Content XAPacker.cxx -NoNewline
         cl /std:c++17 /O2 /EHsc /FeXAPacker XAPacker.cxx
         Compress-Archive -Path XAPacker.exe -DestinationPath XAPacker-${{ github.ref_name }}-windows.zip
 
@@ -39,6 +40,7 @@ jobs:
 
     - name: Build and package XAPacker
       run: |
+        perl -pi -e "s/VERSION/${{ github.ref_name }}/g" "XAPacker.cxx"
         clang++ -std=c++17 -O2 -o XAPacker XAPacker.cxx
         zip XAPacker-${{ github.ref_name }}-linux.zip XAPacker
 
@@ -61,6 +63,7 @@ jobs:
 
     - name: Build and package XAPacker
       run: |
+        perl -pi -e "s/VERSION/${{ github.ref_name }}/g" "XAPacker.cxx"
         clang++ -std=c++17 -O2 -o XAPacker XAPacker.cxx
         zip XAPacker-${{ github.ref_name }}-macos.zip XAPacker
 
