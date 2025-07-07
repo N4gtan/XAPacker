@@ -1,6 +1,9 @@
 #include "xa-interleaver/libxa_deinterleaver.hxx"
 #include "xa-interleaver/libxa_interleaver.hxx"
 
+#define CD_SECTOR_SIZE 2352
+#define XA_DATA_SIZE 2336
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -19,12 +22,24 @@ int main(int argc, char *argv[])
 
     if (strcasecmp(inputPath.extension().string().c_str(), ".xap"))
     {
-        interleaver files(inputPath, sectorStride);
+        class XAPinterleaver : public interleaver
+        {
+            void nullCustomizer(unsigned char *emptyBuffer, FileInfo &entry) override
+            {
+                emptyBuffer[0x010] = emptyBuffer[0x014] = entry.filenum.value_or(emptyBuffer[0x014]);
+                emptyBuffer[0x011] = emptyBuffer[0x015] = entry.nullTermination >= 0 ? entry.channel.value_or(0) : 0;
+                emptyBuffer[0x012] = emptyBuffer[0x016] = 0x48;
+            }
+        public:
+            XAPinterleaver(const std::filesystem::path &path, const int &stride) : interleaver(path, stride) {}
+        } files(inputPath, sectorStride);
+
         if (files.entries.empty())
         {
             fprintf(stderr, "Invalid manifest\n");
             return EXIT_FAILURE;
         }
+
         if (!sectorSize)
             sectorSize = files.entries.front().sectorSize;
 
@@ -72,7 +87,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        files.interleave(output, sectorSize, true);
+        files.interleave(output, sectorSize);
         output.close();
     }
     else
