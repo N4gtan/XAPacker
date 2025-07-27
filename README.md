@@ -35,6 +35,12 @@ Examples:
 XAPacker path/to/input.xap 2352 path/to/output/
 XAPacker path/to/input.csv 2336 path/to/output.xap
 ```
+## Manifest
+The .csv manifest file is the same as [xa-interleaver](../../../xa-interleaver), which has the following format:
+```
+sectors,type,file,null_termination,xa_file_number,xa_channel_number
+```
+More info about each field can be found [here](../../../xa-interleaver?tab=readme-ov-file#manifest).
 
 ## Compile
 A C++ compiler (MSVC, GCC, Clang) is required.
