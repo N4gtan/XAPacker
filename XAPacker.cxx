@@ -50,27 +50,24 @@ int main(int argc, char *argv[])
         std::fstream output(outputFile, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
         const int offset = sectorSize - XA_DATA_SIZE;
 
-        const size_t headerSectors = (files.entries.size() + 127) / 128 + 1;
-        for (size_t i = 0; i < headerSectors; ++i)
+        const size_t headerSectors = 1 + (files.entries.size() / 129);
+        for (size_t i = 0; i <= headerSectors; ++i)
         {
             output.write(reinterpret_cast<const char*>(buffer) + (CD_SECTOR_SIZE - sectorSize), sectorSize);
+            if (!i)
+                continue;
 
-            for (int j = (i - 1) * 128; i > 0 && j < std::min(files.entries.size(), i * 128); ++j)
+            int startIndex = (i - 1) * 128;
+            int seekOffset = sectorSize * i + offset;
+            int limit = std::min(files.entries.size(), i * 128);
+            for (int j = startIndex; j < limit; ++j)
             {
                 auto &entry = files.entries[j];
                 if (!(*entry.channel % 128))
-                {
-                    if (entry.channel != 0)
-                    {
-                        output.seekp(sectorSize * (i - 1) + offset + 0x10 * *entry.channel, std::ios::beg);
-                        unsigned char data[8] {*entry.filenum, (uint8_t)(*entry.channel - 1)};
-                        output.write(reinterpret_cast<const char*>(data), sizeof(data));
-                    }
-                    output.seekp(sectorSize * i + offset + 0x08, std::ios::beg);
-                }
+                    output.seekp(seekOffset + 0x08, std::ios::beg);
                 else
                 {
-                    output.seekp(sectorSize * i + offset + 0x10 * (*entry.channel - (i - 1) * 128), std::ios::beg);
+                    output.seekp(seekOffset + 0x10 * (*entry.channel - startIndex), std::ios::beg);
                     unsigned char data[8] {*entry.filenum, (uint8_t)(*entry.channel - 1)};
                     output.write(reinterpret_cast<const char*>(data), sizeof(data));
                 }
@@ -78,13 +75,10 @@ int main(int argc, char *argv[])
                 output.write(reinterpret_cast<const char*>(&((entry.endSec += headerSectors) -= entry.nullTermination * sectorStride)), sizeof(entry.endSec));
             }
 
-            if (i + 1 == headerSectors)
-            {
-                output.seekp(sectorSize * i + offset + 0x10 * (files.entries.size() - (i - 1) * 128), std::ios::beg);
-                output.put(*files.entries.back().filenum);
-                output.put(files.entries.size() - 1);
-                output.seekp(0, std::ios::end);
-            }
+            output.seekp(seekOffset + 0x10 * (limit - startIndex), std::ios::beg);
+            output.put(*files.entries[limit - 1].filenum);
+            output.put(limit - 1);
+            output.seekp(0, std::ios::end);
         }
 
         files.interleave(output, sectorSize);
