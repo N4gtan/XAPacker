@@ -38,7 +38,7 @@ XAPacker path/to/input.csv 2336 path/to/output.xap
 ## Manifest
 The .csv manifest file is the same as [xa-interleaver](../../../xa-interleaver), which has the following format:
 ```
-sectors,type,file,null_termination,xa_file_number,xa_channel_number
+chunk,type,file,null_termination,xa_file_number,xa_channel_number
 ```
 More info about each field can be found [here](../../../xa-interleaver?tab=readme-ov-file#manifest).
 
