@@ -2,7 +2,6 @@
 #include "xa-interleaver/libxa_interleaver.hxx"
 #define VER "VERSION"
 #define CD_SECTOR_SIZE 2352
-#define XA_DATA_SIZE 2336
 
 struct XAPheader
 {
@@ -30,12 +29,35 @@ class XAPinterleaver : public interleaver
 {
     void nullCustomizer(unsigned char *emptyBuffer, FileInfo &entry) override
     {
-        emptyBuffer[0x010] = emptyBuffer[0x014] = entry.filenum.value_or(emptyBuffer[0x014]);
-        emptyBuffer[0x011] = emptyBuffer[0x015] = entry.nullTermination >= 0 ? entry.channel.value_or(0) : 0;
-        emptyBuffer[0x012] = emptyBuffer[0x016] = 0x48;
+        entry.nullSubheader[0] = entry.filenum.value_or(emptyBuffer[FILENUM_OFFSET]);
+        entry.nullSubheader[1] = entry.nullTermination >= 0 ? entry.channel.value_or(0) : 0;
+        entry.nullSubheader[2] = 0x48;
     }
 public:
     XAPinterleaver(const std::filesystem::path &path, const int &stride) : interleaver(path, stride) {}
+};
+
+class XAPdeinterleaver : public deinterleaver
+{
+    void createManifest(const std::filesystem::path &outputDir, const std::string &fileName) override
+    {
+        FILE *manifest = fopen((outputDir / fileName).string().c_str(), "w");
+        if (!manifest)
+        {
+            fprintf(stderr, "Error: Cannot write manifest \"%s\". %s\n", fileName.c_str(), strerror(errno));
+            return;
+        }
+
+        //fprintf(manifest, "chunk,type,file,null_termination,xa_file_number,xa_channel_number\n");
+        for (const FileInfo &entry : entries)
+        {
+            fprintf(manifest, "%d,%s,%s,%d,%d,%d\n", entry.sectorChunk, inputSectorSize == XA_DATA_SIZE ? "xa" : "xacd",
+                    entry.fileName.c_str(), entry.nullTermination, entry.filenum, entry.channel);
+        }
+        fclose(manifest);
+    }
+public:
+    XAPdeinterleaver(const std::filesystem::path &path) : deinterleaver(path) {}
 };
 
 int main(int argc, char *argv[])
@@ -124,7 +146,7 @@ int main(int argc, char *argv[])
     else
     {
         const std::filesystem::path outputDir = argc >= 4 ? argv[3] : inputPath.parent_path() / inputPath.stem();
-        deinterleaver(inputPath).deinterleave(outputDir, sectorSize);
+        XAPdeinterleaver(inputPath).deinterleave(outputDir, sectorSize);
     }
 
     printf("Process complete.\n");
