@@ -76,12 +76,13 @@ int main(int argc, char *argv[])
     const uint8_t sectorStride = 8;
     int sectorSize = argc >= 3 ? atoi(argv[2]) : 0;
 
-    if (strcasecmp(inputPath.extension().string().c_str(), ".xap"))
+    if (strncasecmp(inputPath.extension().string().c_str(), ".xap", 4))
     {
         XAPinterleaver files(inputPath, sectorStride);
         if (files.entries.empty())
         {
-            fprintf(stderr, "Invalid manifest\n");
+            if (!errno)
+                fprintf(stderr, "Invalid manifest\n");
             return EXIT_FAILURE;
         }
 
@@ -99,17 +100,26 @@ int main(int argc, char *argv[])
         const size_t headerSectors = 2 + (files.entries.size() / 129);
         for (size_t i = 0; i < headerSectors; ++i)
         {
-            XAPheader header {};
+            XAPheader header{};
             if (!i)
                 header.count = (uint8_t)files.entries.size();
             else
             {
                 int startIndex = (i - 1) * 128;
                 int limit      = std::min(files.entries.size(), i * 128) - 1;
-                int limitIndex = limit - startIndex;
-                for (int j = startIndex; j <= limit; ++j)
+                for (auto &entry : files.entries)
                 {
-                    auto &entry   = files.entries[j];
+                    if (*entry.channel < startIndex || *entry.channel > limit)
+                    {
+                        if (*entry.channel < 0 || *entry.channel >= files.entries.size())
+                        {
+                            fprintf(stderr, "Error: Channel number \"%d\" for file \"%s\" is out of range [0, %zu]\n",
+                                    *entry.channel, entry.filePath.filename().string().c_str(), files.entries.size() - 1);
+                            return EXIT_FAILURE;
+                        }
+                        continue;
+                    }
+
                     entry.begSec += headerSectors;
                    (entry.endSec += headerSectors) -= entry.nullTermination * sectorStride;
 
@@ -121,9 +131,10 @@ int main(int argc, char *argv[])
                     else
                     {
                         int index = *entry.channel - 1 - startIndex;
-                        if (index < 0 || index >= limitIndex)
+                        if (header.file[index].endSec != 0)
                         {
-                            fprintf(stderr, "Error: Invalid channel number \"%d\" for file \"%s\"\n", *entry.channel, entry.filePath.filename().string().c_str());
+                            fprintf(stderr, "Error: Channel number \"%d\" for file \"%s\" is duplicated\n",
+                                    *entry.channel, entry.filePath.filename().string().c_str());
                             return EXIT_FAILURE;
                         }
                         header.file[index].filenum = *entry.filenum;
@@ -131,13 +142,17 @@ int main(int argc, char *argv[])
                         header.file[index].begSec  = entry.begSec;
                         header.file[index].endSec  = entry.endSec;
                     }
-                }
 
-                header.file[limitIndex].filenum = *files.entries[limit].filenum;
-                header.file[limitIndex].id      = limit;
+                    if (*entry.channel == limit)
+                    {
+                        int index = limit - startIndex;
+                        header.file[index].filenum = *entry.filenum;
+                        header.file[index].id      = *entry.channel;
+                    }
+                }
             }
 
-            output.write(reinterpret_cast<const char*>(&header) + (CD_SECTOR_SIZE - sectorSize), sectorSize);
+            output.write(reinterpret_cast<const char *>(&header) + (CD_SECTOR_SIZE - sectorSize), sectorSize);
         }
 
         files.interleave(output, sectorSize);
@@ -147,6 +162,8 @@ int main(int argc, char *argv[])
     {
         const std::filesystem::path outputDir = argc >= 4 ? argv[3] : inputPath.parent_path() / inputPath.stem();
         XAPdeinterleaver(inputPath).deinterleave(outputDir, sectorSize);
+        if (errno)
+            return EXIT_FAILURE;
     }
 
     printf("Process complete.\n");
