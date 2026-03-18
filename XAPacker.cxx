@@ -88,13 +88,15 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        const std::filesystem::path outputFile = argc >= 4 ? argv[3] : inputPath.stem() += "_NEW.XAP";
-        std::fstream output(outputFile, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
-        if (!output)
+        const std::filesystem::path outputPath = argc >= 4 ? argv[3] : inputPath.stem() += "_NEW.XAP";
+        FILE *outputFile = fopen(outputPath.string().c_str(), "w+b");
+        if (!outputFile)
         {
-            fprintf(stderr, "Error: Cannot write output file.\n");
+            fprintf(stderr, "Error: Cannot write \"%s\". %s\n", outputPath.string().c_str(), strerror(errno));
             return EXIT_FAILURE;
         }
+        std::unique_ptr<char []> stdoBuf(new char [1024 * 1024]);
+        setvbuf(outputFile, stdoBuf.get(), _IOFBF, 1024 * 1024);
 
         if (sectorSize == 0)
             sectorSize = files.entries.front().sectorSize;
@@ -154,11 +156,11 @@ int main(int argc, char *argv[])
                 }
             }
 
-            output.write(reinterpret_cast<const char *>(&header) + (CD_SECTOR_SIZE - sectorSize), sectorSize);
+            fwrite(reinterpret_cast<const char *>(&header) + (CD_SECTOR_SIZE - sectorSize), 1, sectorSize, outputFile);
         }
 
-        files.interleave(output, sectorSize);
-        output.close();
+        files.interleave(outputFile, sectorSize);
+        fclose(outputFile);
     }
     else
     {
