@@ -3,6 +3,7 @@
 #define VER "VERSION"
 #define CD_SECTOR_SIZE 2352
 
+#pragma pack(push, 1)
 struct XAPheader
 {
     unsigned char sync[12]   {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00};
@@ -24,6 +25,7 @@ struct XAPheader
     } file[128];
     unsigned char crc[272]; // I know it should be edc[4] and ecc[276], but this way is easier to handle
 };
+#pragma pack(pop)
 
 class XAPinterleaver : public interleaver
 {
