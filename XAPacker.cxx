@@ -36,14 +36,14 @@ class XAPinterleaver : public interleaver
         entry.nullSubheader[2] = 0x48;
     }
 public:
-    XAPinterleaver(const std::filesystem::path &path, const int &stride) : interleaver(path, stride) {}
+    using interleaver::interleaver;
 };
 
 class XAPdeinterleaver : public deinterleaver
 {
     void createManifest(const std::filesystem::path &outputDir, const std::string &fileName) override
     {
-        FILE *manifest = fopen((outputDir / fileName).string().c_str(), "w");
+        FILE *manifest = fopen((outputDir / fileName).string().c_str(), "wb");
         if (!manifest)
         {
             fprintf(stderr, "Error: Cannot write manifest \"%s\". %s\n", fileName.c_str(), strerror(errno));
@@ -59,7 +59,7 @@ class XAPdeinterleaver : public deinterleaver
         fclose(manifest);
     }
 public:
-    XAPdeinterleaver(const std::filesystem::path &path) : deinterleaver(path) {}
+    using deinterleaver::deinterleaver;
 };
 
 int main(int argc, char *argv[])
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     }
 
     const std::filesystem::path inputPath = argv[1];
-    const uint8_t sectorStride = 8;
+    constexpr uint8_t sectorStride = 8;
     int sectorSize = argc >= 3 ? atoi(argv[2]) : 0;
 
     if (strncasecmp(inputPath.extension().string().c_str(), ".xap", 4))
@@ -96,14 +96,14 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        if (!sectorSize)
+        if (sectorSize == 0)
             sectorSize = files.entries.front().sectorSize;
 
         const size_t headerSectors = 2 + (files.entries.size() / 129);
         for (size_t i = 0; i < headerSectors; ++i)
         {
             XAPheader header{};
-            if (!i)
+            if (i == 0)
                 header.count = (uint8_t)files.entries.size();
             else
             {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
                     entry.begSec += headerSectors;
                    (entry.endSec += headerSectors) -= entry.nullTermination * sectorStride;
 
-                    if (!(*entry.channel % 128))
+                    if ((*entry.channel % 128) == 0)
                     {
                         memcpy(&header.sign, &entry.begSec, sizeof(entry.begSec));
                         memcpy(&header.stride, &entry.endSec, sizeof(entry.endSec));
