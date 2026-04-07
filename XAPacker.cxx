@@ -41,7 +41,7 @@ public:
 
 class XAPdeinterleaver : public deinterleaver
 {
-    void createManifest(const std::filesystem::path &outputDir, const std::string &fileName) override
+    void createManifest(const std::filesystem::path &outputDir, const std::string &fileName, const char *type) override
     {
         FILE *manifest = fopen((outputDir / fileName).string().c_str(), "wb");
         if (!manifest)
@@ -53,7 +53,7 @@ class XAPdeinterleaver : public deinterleaver
         //fprintf(manifest, "chunk,type,file,null_termination,xa_file_number,xa_channel_number\n");
         for (const FileInfo &entry : entries)
         {
-            fprintf(manifest, "%d,%s,%s,%d,%d,%d\n", entry.sectorChunk, inputSectorSize == XA_DATA_SIZE ? "xa" : "xacd",
+            fprintf(manifest, "%d,%s,%s,%d,%d,%d\n", entry.sectorChunk, type,
                     entry.fileName.c_str(), entry.nullTermination, entry.filenum, entry.channel);
         }
         fclose(manifest);
