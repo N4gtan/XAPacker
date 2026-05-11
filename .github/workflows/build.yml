@@ -1,6 +1,9 @@
 name: Build and Release
 on:   [ push, pull_request ]
 
+env:
+  ref_name: ${{ (github.ref_type == 'tag' && github.ref_name) || 'beta' }}
+
 jobs:
   build-windows:
     name:    Build Windows binaries
@@ -17,16 +20,16 @@ jobs:
         $vsPath = vswhere -latest -property installationPath
         Import-Module "$vsPath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
         Enter-VsDevShell -VsInstallPath $vsPath -Arch amd64 -SkipAutomaticLocation
-        (Get-Content XAPacker.cxx -Raw) -replace 'VERSION', "${{ github.ref_name }}" | Set-Content XAPacker.cxx -NoNewline
+        (Get-Content XAPacker.cxx -Raw) -replace 'VERSION', "${{ env.ref_name }}" | Set-Content XAPacker.cxx -NoNewline
         cl /std:c++17 /O2 /EHsc /FeXAPacker XAPacker.cxx
-        Compress-Archive -Path XAPacker.exe -DestinationPath XAPacker-${{ github.ref_name }}-windows.zip
+        Compress-Archive -Path XAPacker.exe -DestinationPath XAPacker-${{ env.ref_name }}-windows.zip
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@main
       with:
         name: windows
         path: |
-          XAPacker-${{ github.ref_name }}-windows.zip
+          XAPacker-${{ env.ref_name }}-windows.zip
 
   build-linux:
     name:    Build Linux binaries
@@ -40,16 +43,16 @@ jobs:
 
     - name: Build and package XAPacker
       run: |
-        perl -pi -e "s/VERSION/${{ github.ref_name }}/g" "XAPacker.cxx"
+        perl -pi -e "s/VERSION/${{ env.ref_name }}/g" "XAPacker.cxx"
         clang++ -std=c++17 -O2 -o XAPacker XAPacker.cxx
-        zip XAPacker-${{ github.ref_name }}-linux.zip XAPacker
+        zip XAPacker-${{ env.ref_name }}-linux.zip XAPacker
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@main
       with:
         name: linux
         path: |
-          XAPacker-${{ github.ref_name }}-linux.zip
+          XAPacker-${{ env.ref_name }}-linux.zip
 
   build-macos:
     name:    Build macOS binaries
@@ -63,16 +66,16 @@ jobs:
 
     - name: Build and package XAPacker
       run: |
-        perl -pi -e "s/VERSION/${{ github.ref_name }}/g" "XAPacker.cxx"
+        perl -pi -e "s/VERSION/${{ env.ref_name }}/g" "XAPacker.cxx"
         clang++ -arch x86_64 -arch arm64 -mmacos-version-min=10.15 -std=c++17 -O2 -o XAPacker XAPacker.cxx
-        zip XAPacker-${{ github.ref_name }}-macos.zip XAPacker
+        zip XAPacker-${{ env.ref_name }}-macos.zip XAPacker
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@main
       with:
         name: macos
         path: |
-          XAPacker-${{ github.ref_name }}-macos.zip
+          XAPacker-${{ env.ref_name }}-macos.zip
 
   # This job takes care of creating a new release and upload the build
   # artifacts if the last commit is associated to a tag.
@@ -91,7 +94,6 @@ jobs:
       uses: softprops/action-gh-release@master
       with:
         fail_on_unmatched_files: true
-        generate_release_notes:  true
         files: |
           windows/*
           linux/*
