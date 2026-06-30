@@ -101,8 +101,8 @@ int main(int argc, char *argv[])
         if (sectorSize == 0)
             sectorSize = files.entries.front().sectorSize;
 
-        const size_t headerSectors = 2 + (files.entries.size() / 129);
-        for (size_t i = 0; i < headerSectors; ++i)
+        const int headerSectors = 2 + (files.entries.size() / 129);
+        for (int i = 0; i < headerSectors; ++i)
         {
             XAPheader header{};
             if (i == 0)
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
             else
             {
                 int startIndex = (i - 1) * 128;
-                int limit      = std::min(files.entries.size(), i * 128) - 1;
+                int limit      = std::min<int>(files.entries.size(), i * 128) - 1;
                 for (auto &entry : files.entries)
                 {
                     if (*entry.channel < startIndex || *entry.channel > limit)
