@@ -32,7 +32,7 @@ class XAPinterleaver : public interleaver
     void nullCustomizer(unsigned char *emptyBuffer, FileInfo &entry) override
     {
         entry.nullSubheader[0] = entry.filenum.value_or(emptyBuffer[FILENUM_OFFSET]);
-        entry.nullSubheader[1] = entry.nullTermination >= 0 ? entry.channel.value_or(0) : 0;
+        entry.nullSubheader[1] = entry.nullTrailing >= 0 ? entry.channel.value_or(0) : 0;
         entry.nullSubheader[2] = 0x48;
     }
 public:
@@ -50,11 +50,11 @@ class XAPdeinterleaver : public deinterleaver
             return;
         }
 
-        //fprintf(manifest, "chunk,type,file,null_termination,xa_file_number,xa_channel_number\n");
+        //fprintf(manifest, "chunk,type,file,null_trailing,xa_file_number,xa_channel_number\n");
         for (const FileInfo &entry : entries)
         {
             fprintf(manifest, "%d,%s,%s,%d,%d,%d\n", entry.sectorChunk, type,
-                    entry.fileName.c_str(), entry.nullTermination, entry.filenum, entry.channel);
+                    entry.fileName.c_str(), entry.nullTrailing, entry.filenum, entry.channel);
         }
         fclose(manifest);
     }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
                     }
 
                     entry.begSec += headerSectors;
-                   (entry.endSec += headerSectors) -= entry.nullTermination * sectorStride;
+                    entry.endSec += headerSectors + sectorStride;
 
                     if ((*entry.channel % 128) == 0)
                     {
