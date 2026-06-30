@@ -88,14 +88,14 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        const std::filesystem::path outputPath = argc >= 4 ? argv[3] : inputPath.stem() += "_NEW.XAP";
+        const std::filesystem::path outputPath = argc >= 4 ? argv[3] : inputPath.parent_path() /  inputPath.stem() += "_NEW.XAP";
         FILE *outputFile = fopen(outputPath.string().c_str(), "w+b");
         if (!outputFile)
         {
             fprintf(stderr, "Error: Cannot write \"%s\". %s\n", outputPath.string().c_str(), strerror(errno));
             return EXIT_FAILURE;
         }
-        std::unique_ptr<char []> stdoBuf(new char [1024 * 1024]);
+        std::unique_ptr<char[]> stdoBuf(new char [1024 * 1024]);
         setvbuf(outputFile, stdoBuf.get(), _IOFBF, 1024 * 1024);
 
         if (sectorSize == 0)
