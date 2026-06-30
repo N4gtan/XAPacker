@@ -66,11 +66,11 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("XAPacker " VER " by N4gtan\n\n");
-        printf("    Usage: XAPacker <input> <2336/2352> <output>\n\n");
-        printf("    Input: Manifest or XAP file\n");
-        printf("2336/2352: Output file sector size (2336 or 2352). Defaults to input file sector size\n");
-        printf("   Output: Optional output file(s) path. Defaults to input file path\n");
+        printf("XAPacker " VER " by N4gtan\n\n"
+               " Usage: XAPacker <input> [size] [output]\n\n"
+               " Input: Manifest or XAP file\n"
+               "  Size: Optional output file(s) sector size (2336 or 2352). Defaults to input file sector size\n"
+               "Output: Optional output dir/file path. Defaults to input file path\n");
         return EXIT_SUCCESS;
     }
 

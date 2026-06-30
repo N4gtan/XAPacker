@@ -11,12 +11,12 @@ The .XAP format is utilized by Digimon Rumble Arena and maybe other PSX games.
 
 ## Usage
 ```
-XAPacker <input> <2336/2352> <output>
+XAPacker <input> [size] [output]
 ```
 
 ### Commands
 >[!CAUTION]
->All arguments are positional so, to set an `<output>`, you need to set the previous ones.
+>All arguments are positional so, to set an `[output]`, you need to set the previous ones.
 
 >[!TIP]
 >On Windows, can simply drag and drop a supported file into the exe to run it with the default options.
@@ -27,8 +27,8 @@ Required:
 ```
 Optional:
 ```
-<2336/2352> Output file sector size (2336 or 2352). Defaults to input file (or the first file in the .csv) sector size
-<output>    Optional output file(s) path. Defaults to input file path
+[size]      Optional output file sector size (2336 or 2352). Defaults to input file (or the first file in the .csv) sector size
+[output]    Optional output dir/file path. Defaults to input file path
 ```
 Examples:
 ```
