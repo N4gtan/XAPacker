@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
                "Output: Optional output dir/file path. Defaults to input file path\n");
         return EXIT_SUCCESS;
     }
+    setlocale(LC_CTYPE, "");
 
     const std::filesystem::path inputPath = argv[1];
     constexpr uint8_t sectorStride = 8;
