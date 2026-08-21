@@ -96,8 +96,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: Cannot write \"%s\". %s\n", outputPath.string().c_str(), strerror(errno));
             return EXIT_FAILURE;
         }
-        std::unique_ptr<char[]> stdoBuf(new char [1024 * 1024]);
-        setvbuf(outputFile, stdoBuf.get(), _IOFBF, 1024 * 1024);
+        setvbuf(outputFile, nullptr, _IOFBF, 1024 * 1024);
 
         if (sectorSize == 0)
             sectorSize = files.entries.front().sectorSize;
